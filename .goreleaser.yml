@@ -21,7 +21,7 @@ brews:
     bin.install "reflex"
 builds:
 - id: *name
-  main: "./main.go"
+  main: "."
   binary: *name
   env:
   - CGO_ENABLED=0

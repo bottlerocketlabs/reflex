@@ -1,0 +1,85 @@
+# Make sure to check the documentation at http://goreleaser.com
+before:
+  hooks:
+  - go mod tidy
+project_name: &name reflex
+brews:
+- name: *name
+  tap:
+    owner: bottlerocketlabs
+    name: homebrew-apps
+    token: "{{ .Env.HOMEBREW_GITHUB_TOKEN }}"
+  folder: Formula
+  homepage: &homepage https://github.com/cespare/reflex
+  description: &description Run a command when files change
+  license: &license MIT
+  test: |
+    system "#{bin}/reflex -h"
+  dependencies:
+  - name: go
+  install: |-
+    bin.install "reflex"
+builds:
+- id: *name
+  main: "./main.go"
+  binary: *name
+  env:
+  - CGO_ENABLED=0
+  goos:
+  - darwin
+  - linux
+  goarch:
+  - amd64
+archives:
+- replacements:
+    darwin: Darwin
+    linux: Linux
+  files:
+  - README.md
+  - LICENSE
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+    - Merge pull request
+    - Merge branch
+    - go mod tidy
+nfpms:
+- id: deb
+  formats:
+  - deb
+  description: *description
+  maintainer: "Stuart Warren"
+  license: *license
+  homepage: *homepage
+- id: apk
+  file_name_template: "{{ .ProjectName }}-{{ .Version }}"
+  replacements:
+      amd64: x86_64
+  formats:
+  - apk
+  description: *description
+  maintainer: "Stuart Warren"
+  license: *license
+  homepage: *homepage
+publishers:
+- name: deb
+  ids:
+  - deb
+  cmd: hack/publish_deb {{ abs .ArtifactPath }} {{ .ArtifactName }} {{ replace .Arch "x86_64" "amd64" }}
+  env:
+  - ARTIFACTORY_USERNAME={{ .Env.ARTIFACTORY_USERNAME }}
+  - ARTIFACTORY_SECRET={{ .Env.ARTIFACTORY_SECRET }}
+- name: apk
+  ids:
+  - apk
+  cmd: hack/publish_apk {{ abs .ArtifactPath }} {{ .ArtifactName }} {{ replace .Arch "amd64" "x86_64" }}
+  env:
+  - ARTIFACTORY_USERNAME={{ .Env.ARTIFACTORY_USERNAME }}
+  - ARTIFACTORY_SECRET={{ .Env.ARTIFACTORY_SECRET }}
